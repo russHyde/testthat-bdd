@@ -1,11 +1,177 @@
 ---
-title: "testthat-bdd"
+title: "describe(..., it())"
+subtitle: "'Behaviour-driven development' in {testthat}"
+author: "Russ Hyde"
+format: revealjs
+execute: 
+  echo: true
 ---
 
-## Quarto
-
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+## {testthat}
 
 ```{r}
-1 + 1
+library(testthat)
 ```
+
+```{r}
+test_that("unique() removes duplicates", {
+  x <- c(1, 3, 1, 4, 5, 3, 6)
+  expected <- c(1, 3, 4, 5, 6)
+
+  expect_equal(unique(x), expected)
+})
+
+test_that("unique() doesn't modify empty vectors", {
+  x <- character(0)
+
+  expect_equal(unique(x), x)
+})
+```
+
+## describe() adds structure
+
+```{r}
+describe("unique()", {
+  it("removes duplicates", {
+    x <- c(1, 3, 1, 4, 5, 3, 6)
+    expected <- c(1, 3, 4, 5, 6)
+
+    expect_equal(unique(x), expected)
+  })
+
+  it("doesn't modify empty vectors", {
+    x <- character(0)
+
+    expect_equal(unique(x), x)
+  })
+})
+```
+
+## describe() adds structure to that structure
+
+```{r}
+describe("unique()", {
+  describe("on empty vectors", {
+    it("leaves them unchanged", {
+      x <- character(0)
+      expect_equal(unique(x), x)
+    })
+  })
+  
+  describe("on non-empty vectors", {
+    # not implemented
+  })
+})
+```
+
+## describe() adds namespacing
+
+```{r}
+clean_up <- function(x) {
+  x |>
+    janitor::clean_names() |>
+    dplyr::mutate(
+      x_code = factor(x_code, levels = letters)
+    )
+}
+```
+
+. . .
+
+```{r}
+clean_up(
+  tibble::tibble(
+    xCode = letters[1:3],
+    Y = 1:3
+  )
+)
+```
+
+## describe() adds namespacing (cont.)
+
+```{r}
+describe("clean_up()", {
+  complex_data <- tibble::tibble(xCode = letters[1:3], Y = 1:3)
+  cleaned <- clean_up(complex_data)
+  
+  it("converts colnames to snake_case", {
+    expect_equal(colnames(cleaned), c("x_code", "y"))
+  })
+  
+  it("ensures column 'x_code' is a factor", {
+    expect_true(is.factor(cleaned$x_code))
+  })
+})
+```
+
+## describe() reports appropriately
+
+```{r}
+test_code <- r"[
+describe("describe block test-reporting", {
+  it("prints successes as expected", {
+    expect_true(TRUE)
+  })
+  it("prints failures as expected", {
+    expect_true(FALSE)
+  })
+  warny <- function() {
+    warning("History is a vast early warning system")
+    TRUE
+  }
+  it("prints warnings as expected", {
+    expect_true(warny())
+  })
+})
+]"
+```
+
+## describe() reports appropriately (cont.)
+
+```{r}
+tf <- tempfile()
+cat(test_code, file = tf)
+testthat::test_file(path = tf)
+```
+
+## How does {testthat} describe describe()?
+
+- A simple BDD (behaviour-driven development) DSL for writing tests
+- Tests using the describe syntax
+  - ... verify the tested code
+  - ... [and] document its intended behaviour
+- Each describe block
+  - specifies a larger component or function
+  - and contains a set of specifications
+
+## How does {testthat} describe describe()?
+
+- Use `describe()` to verify that you implement the right things
+  - What did the client ask you to implement?
+  - What should happen when a user does X?
+- ... and use `test_that()` to ensure you do the things right
+  - ? Input/Output mechanics of your low-level functions
+
+## Behaviour-driven development
+
+- Create a high-level description of what a software system could/should do 
+- Describe that behaviour using a restricted vocabulary
+- Then encode that description in automated tests
+
+. . .
+
+- Outside-In
+- The tests are by-products
+- GIVEN/WHEN/THEN and user-story approaches
+
+## Whither the vignette?
+
+- High-level description of package workflows
+- Generated automatically
+- For most public functions, Behaviour == Function input/output
+- User visible
+
+. . .
+
+- If you need to demonstrate to a client that you've implemented what they wanted
+- Show them in a vignette (or automated README.Rmd) first
