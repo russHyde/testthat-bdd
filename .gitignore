@@ -1,3 +1,7 @@
+# Project-specific
+testthat-bdd_files/
+testthat-bdd.html
+
 # History files
 .Rhistory
 .Rapp.history
